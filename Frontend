@@ -1,0 +1,88 @@
+// Frontend (React)
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+
+function App() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [movies, setMovies] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+
+  const apiKey = "http://img.omdbapi.com/?apikey=[yourkey]&";
+
+  const debouncedSearch = debounce((query) => {
+    if (query) {
+      axios
+        .get(`https://www.omdbapi.com/?s=${query}&apikey=${apiKey}`)
+        .then((response) => {
+          if (response.data.Search) {
+            setMovies(response.data.Search);
+          } else {
+            setMovies([]);
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    } else {
+      setMovies([]);
+    }
+  }, 300);
+
+  const debounce = (func, delay) => {
+    let timer;
+    return function (...args) {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        func(...args);
+      }, delay);
+    };
+  };
+
+  const addToFavorites = (movie) => {
+    setFavorites([...favorites, movie]);
+  };
+
+  const removeFromFavorites = (movie) => {
+    const updatedFavorites = favorites.filter((m) => m.imdbID !== movie.imdbID);
+    setFavorites(updatedFavorites);
+  };
+
+  return (
+    <div className="App">
+      <h1>Movie Search and Favorites</h1>
+      <input
+        type="text"
+        placeholder="Search for a movie"
+        onChange={(e) => {
+          setSearchQuery(e.target.value);
+          debouncedSearch(e.target.value);
+        }}
+      />
+      <div className="movie-list">
+        {movies.map((movie) => (
+          <div key={movie.imdbID} className="movie-card">
+            <h2>{movie.Title}</h2>
+            <p>Year: {movie.Year}</p>
+            {favorites.some((fav) => fav.imdbID === movie.imdbID) ? (
+              <button onClick={() => removeFromFavorites(movie)}>Remove from Favorites</button>
+            ) : (
+              <button onClick={() => addToFavorites(movie)}>Add to Favorites</button>
+            )}
+          </div>
+        ))}
+      </div>
+      <h2>Favorites</h2>
+      <div className="favorites-list">
+        {favorites.map((fav) => (
+          <div key={fav.imdbID} className="favorite-card">
+            <h2>{fav.Title}</h2>
+            <p>Year: {fav.Year}</p>
+            <button onClick={() => removeFromFavorites(fav)}>Remove from Favorites</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default App;
